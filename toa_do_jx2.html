@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Tool Chuyển Đổi Tọa Độ JX2</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    input, button, select { padding: 8px; margin: 5px 0; width: 100%; }
+    .section { margin-bottom: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 10px; }
+    h2 { margin-top: 0; }
+  </style>
+</head>
+<body>
+  <h1>🔁 Tool Chuyển Đổi Tọa Độ JX2</h1>
+
+<div class="section">
+  <h2>🔎 Tìm kiếm bản đồ theo ID</h2>
+  <label>ID bản đồ: <input type="number" id="searchMapId" style="width: 90px;" /></label><br>
+  <button onclick="searchMap()">Tìm bản đồ</button>
+  <div id="mapSearchResult" style="margin-top: 10px;"></div>
+</div>
+
+<div class="section">
+  <h2>1️⃣ Từ tọa độ script ➜ tọa độ trong game</h2>
+  <label>Chọn bản đồ:
+    <select id="mapSelect"></select>
+  </label><br>
+
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 10px;">
+    <label>X (script): <input type="number" id="scriptX" style="width: 90px;" /></label>
+    <label>Y (script): <input type="number" id="scriptY" style="width: 90px;" /></label>
+  </div>
+
+  <button onclick="convertToGame()">Chuyển sang tọa độ game</button>
+  <div id="gameResult" style="margin-top: 10px; color: darkred; line-height: 1.5;"></div>
+</div>
+
+
+
+  <h2>2️⃣ Từ tọa độ game ➜ tọa độ script</h2>
+  <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 10px;">
+    <label>X (game): <input type="number" id="gameX" style="width: 110px;" /></label>
+    <label>Y (game): <input type="number" id="gameY" style="width: 110px;" /></label>
+  </div>
+  <button onclick="convertToScript()">Chuyển sang tọa độ script</button>
+  <p id="scriptResult" style="color: darkred; font-weight: bold;"></p>
+
+</div>
+
+  <script>
+    const maps = {
+      100: "Tuyền Châu", 101: "Hải ngoại cô đảo", 102: "Đào Hoa đảo", 103: "Đông Hải Hải Tân 1",
+      104: "Đông Hải Hải Tân 2", 105: "Tây Tuyền Châu", 106: "Long Tuyền Thôn", 107: "Vũ Di Sơn",
+      108: "Bắc Tuyền Châu", 109: "Thanh Âm động 1", 110: "Thanh Âm động 2", 111: "Thanh Khê động",
+      112: "Lưỡng Thủy động 1", 113: "Lưỡng Thủy động 2", 114: "Vương Mẫu động 1", 115: "Vương Mẫu động 2",
+      116: "Vương Mẫu động 3", 117: "Cô đảo", 118: "Dao Tiên động", 150: "Dương Châu", 151: "Vân Mộng Trạch",
+      200: "Biện Kinh", 201: "Nam Biện Kinh", 202: "Hạnh Hoa thôn", 203: "Tây Biện Kinh", 204: "Thiếu Lâm",
+      205: "Đông Biện Kinh", 206: "Nhạn Môn quan phế", 207: "Nhị Long sơn", 208: "Lương Sơn Bạc",
+      209: "Cái Bang", 210: "Dương Trung động 1", 211: "Dương Trung động 2", 212: "Dương Trung động 3",
+      213: "Thiếu Lâm mật thất 1", 214: "Thiếu Lâm mật thất 2", 215: "Hắc Phong động", 216: "Tường Vân động",
+      217: "Dã Trư lâm", 218: "Linh Bảo sơn", 219: "Thiên Ba Dương phủ",
+      300: "Thành Đô", 301: "Tây Thành Đô", 302: "Thanh Thành sơn", 303: "Nga My", 304: "Nam Thành Đô",
+      305: "Đường Môn", 306: "Giang Tân Thôn", 307: "Phong Đô", 308: "Bắc Thành Đô", 309: "Kiếm Các Thục đạo",
+      310: "Kiếm Môn quan", 311: "Phục Ngưu sơn", 312: "Võ Đang", 313: "Thiên Sư động 1", 314: "Thiên Sư động 2",
+      315: "Băng Tâm động 1", 316: "Băng Tâm động 2", 317: "Trúc Ty động 1", 318: "Trúc Ty động 2",
+      319: "Phong Ma động 1", 320: "Phong Ma động 2", 321: "Kim Quang động", 322: "Long Hổ động 1",
+      323: "Long Hổ động 2", 324: "Thất Tinh động 1", 325: "Thất Tinh động 2", 326: "Mộ Tuyết sơn trang",
+      327: "Ô Mông Bộ", 328: "Quỷ Môn Hồi Lang", 329: "Thiên sư bí cảnh", 350: "Tương Dương",
+      400: "Đại Lý phủ", 401: "Điểm Thương sơn", 402: "Tây Song Bản Nạp bắc", 403: "Tây Song Bản Nạp nam",
+      404: "Thúy Yên", 405: "Chân núi Vũ Lăng", 406: "Vũ Lăng sơn", 407: "Ngũ Độc Giáo", 408: "Miêu Lĩnh",
+      409: "Thiên Tầm tháp 1", 410: "Thiên Tầm tháp 2", 411: "Thiên Tầm tháp 3", 412: "Long Nhãn động 1",
+      413: "Long Nhãn động 2", 414: "Phụng Nhãn động", 415: "Phụng Nhãn động 2", 416: "Bạch Thủy động 1",
+      417: "Bạch Thủy động 2", 418: "Ngũ Độc mê cung tầng 1", 419: "Ngũ Độc mê cung 2",
+      420: "Yến Tử động 1", 421: "Yến Tử động 2", 422: "Vạn Độc trại", 425: "Võ Lâm Minh",
+      426: "Ngọc Dung Phong", 427: "Địa Huyền Cung", 428: "Ngưng Nguyệt Cung", 429: "Sương Phong Nhai",
+      500: "Phụng Tường phủ", 501: "Nam Phụng Tường", 502: "Hoa Sơn", 503: "Tần Lăng", 504: "Bắc Phụng Tường",
+      505: "Dược Vương cốc", 506: "Mê cung sa mạc", 507: "Long Môn trấn", 508: "Quang Minh đỉnh",
+      509: "Côn Lôn", 510: "Dược Vương động", 511: "Cổ Dương động 1", 512: "Cổ Dương động 2",
+      513: "Hoàng Lăng mộ thất tầng 1", 514: "Hoàng Lăng mộ thất tầng 2",
+      600: "Bộ lạc Vương Kỳ", 601: "Đại Thảo Nguyên 1", 602: "Đại Thảo Nguyên 2", 603: "Nhạn Môn quan ngoại",
+      604: "Nhạn Môn quan", 605: "Thiên Môn trận ngoại", 606: "Thiên Môn trận nội", 607: "Thiên Môn trận chính" ,
+	  701: "Đại lao", 702: "Thiên lao", 703: "Ải thiên lao", 704: "Cánh đồng", 705: "Mỏ khoáng",
+      706: "Bụi cây", 707: "Thâm sơn", 708: "Ác Nhân Cốc", 709: "Giấu Kiếm Sơn Trang", 710: "Hưng An lĩnh",
+      711: "Thạch Môn động", 712: "Không Tang sơn", 713: "Thanh Thủy thôn", 714: "Nam Hòe cốc",
+      715: "Hội Tiên lĩnh", 716: "Linh Nham động", 717: "Côn Ngô sơn", 718: "Doanh Dân Thôn",
+      719: "Hàm U cốc", 720: "Thương Long lĩnh", 721: "Huyền Tinh động", 722: "Tử Tang sơn",
+      723: "Lam Nhạc Thôn", 724: "Hiên Viên cốc", 730: "Nhà lao thành thị 1", 731: "Nhà lao thành thị 2",
+      732: "Nhà lao thành thị 3", 733: "Nhà lao thành thị 4", 734: "Nhà lao thành thị 5",
+      801: "Thông Thiên Đại Lôi", 802: "Lôi Chấn Bát Phương", 803: "Cước điếm khách sạn", 804: "Lang Nha động phủ",
+      805: "Sơn gian sách kiều", 806: "Điểm báo danh Ngọc Môn quan", 807: "Chiến trường Nhạn Môn quan",
+      808: "Điểm báo danh Nhạn Môn quan", 809: "Chiến trường Nhạn Môn quan", 810: "Khê lưu bộc bố",
+      811: "Thiên ngoại phi tiên", 812: "Lăng Hư nhai", 813: "Thiên Cơ Lâu", 814: "Tàng Kinh Các",
+      815: "Nghiệt Long động", 816: "Vô Sắc Trai", 817: "Luyện binh trường", 818: "Mộ Cự Hiệp",
+      819: "Mộ Cự Hiệp", 820: "Mộ Cự Hiệp", 821: "Nhiều người Thông thiên đại lôi", 822: "Nhiều người Lôi chấn bát phương",
+      823: "Nhiều người Cước điếm khách sạn", 824: "Nhiều người Khê lưu bộc bố", 825: "Nhiều người Thiên ngoại phi tiên",
+      826: "Nhiều người Sơn gian sách kiều", 827: "Tổ đội hỗn chiến Thông thiên đại lôi", 828: "Tổ đội hỗn chiến Lôi chấn bát phương",
+      829: "Tổ đội Thông thiên đại lôi", 830: "Tổ đội Lôi chấn bát phương", 831: "Tổ đội Cước điếm khách sạn",
+      832: "Tổ đội Khê lưu bộc bố", 833: "Tổ đội Thiên ngoại phi tiên", 834: "Tổ đội Sơn gian sách kiều",
+      835: "Võ Lâm đại Lôi đài", 836: "Vô Song đại Lôi đài", 837: "Anh hùng đại Lôi đài", 838: "Thần binh Lôi đài",
+      839: "Lôi đài Công thành chiến", 840: "Lôi đài Công thành chiến", 841: "Lôi đài Công thành chiến",
+      842: "Lôi đài Công thành chiến", 851: "Yết chi tiểu trúc", 852: "Cô đảo", 853: "Động phòng hoa chúc",
+      854: "Vân Sơn đỉnh", 855: "Yết chi tiểu trúc", 856: "Cô đảo", 857: "Động phòng hoa chúc",
+      858: "Vân Sơn đỉnh", 881: "Chiến trường Thôn trang-Nhạn Môn Quan", 882: "Chiến trường Thảo cốc-Nhạn Môn Quan",
+      883: "Chiến trường pháo đài-Nhạn Môn Quan", 884: "Chiến trường chính-Nhạn Môn Quan",
+      885: "Sát Thủ đường phân đà", 886: "Tuyền Châu Công thành chiến", 887: "Thành Đô Công thành chiến",
+      888: "Tương Dương Công thành chiến", 889: "Hồi Phong trại",
+      900: "Chiến trường Ngọc Môn quan", 901: "Sơn môn", 902: "Đại viện", 903: "Hậu hoa viên",
+      904: "Liên Hoàn Sào", 905: "Tàng Kiếm các", 908: "Tử Trúc lâm", 909: "Kiếm Chủng", 911: "Sơn môn",
+      912: "Đại viện", 913: "Hậu hoa viên", 914: "Liên Hoàn Sào", 915: "Tàng Kiếm các", 918: "Tử Trúc lâm",
+      919: "Kiếm Chủng", 920: "Tử Quang Các", 921: "Tử Quang Các", 922: "Tử Quang Các", 923: "Tử Quang Các",
+      924: "Tử Quang Các", 925: "Tử Quang Các", 926: "Tử Quang Các", 927: "Tử Quang Các", 928: "Tử Quang Các",
+      929: "Tử Quang Các", 930: "Tử Quang Các", 931: "Tử Quang Các", 932: "Tử Quang Các", 933: "Tử Quang Các",
+      934: "Tử Quang Các", 935: "Tử Quang Các", 936: "Tử Quang Các", 937: "Tử Quang Các", 938: "Tử Quang Các",
+      939: "Tử Quang Các", 940: "Tử Quang Các", 941: "Tử Quang Các", 942: "Tử Quang Các", 943: "Tử Quang Các",
+      944: "Tử Quang Các", 945: "Tử Quang Các", 946: "Tử Quang Các", 947: "Tử Quang Các", 948: "Tử Quang Các",
+      949: "Tử Quang Các", 951: "Điểm Oa Khấu đổ bộ 1", 952: "Điểm Oa Khấu đổ bộ 2", 953: "Điểm Oa Khấu đổ bộ 3",
+      954: "Điểm Oa Khấu đổ bộ 4", 955: "Điểm Oa Khấu đổ bộ 5", 956: "Điểm Oa Khấu đổ bộ 6",
+      957: "Điểm Oa Khấu đổ bộ 7", 958: "Điểm Oa Khấu đổ bộ 8", 959: "Điểm Oa Khấu đổ bộ 9",
+      960: "Điểm Oa Khấu đổ bộ 10", 961: "Khu vực ném tuyết 1", 962: "Khu vực ném tuyết 2",
+      963: "Khu vực ném tuyết 3", 964: "Khu vực ném tuyết 4", 965: "Khu vực ném tuyết 5",
+      966: "Ngân hà", 967: "Ngân hà", 968: "Ngân hà", 969: "Hoa Sơn",
+      971: "Tỷ võ lôi đài", 972: "Tỷ võ lôi đài", 973: "Tỷ võ lôi đài",
+      974: "Bên ngoài Đại hội tỷ võ", 975: "Bên ngoài Đại hội tỷ võ", 976: "Bên ngoài Đại hội tỷ võ",
+      977: "Điểm đăng đài",
+	  1010: "Thái Hư Huyễn Cảnh", 1011: "Sơn môn", 1012: "Đại viện", 1013: "Hậu hoa viên",
+      1014: "Liên Hoàn Sào", 1015: "Tàng Kiếm các", 1018: "Tử Trúc lâm", 1019: "Kiếm Chủng",
+      1021: "Sơn môn", 1022: "Đại viện", 1023: "Hậu hoa viên", 1024: "Liên Hoàn Sào",
+      1025: "Tàng Kiếm các", 1028: "Tử Trúc lâm", 1029: "Kiếm Chủng", 1031: "Sơn môn",
+      1032: "Đại viện", 1033: "Hậu hoa viên", 1034: "Liên Hoàn Sào", 1035: "Tàng Kiếm các",
+      1038: "Tử Trúc lâm", 1039: "Kiếm Chủng", 1041: "Sơn môn", 1042: "Đại viện",
+      1043: "Hậu hoa viên", 1044: "Liên Hoàn Sào", 1045: "Tàng Kiếm các", 1048: "Tử Trúc lâm",
+      1049: "Kiếm Chủng", 1051: "Sơn môn", 1052: "Đại viện", 1053: "Hậu hoa viên",
+      1054: "Liên Hoàn Sào", 1055: "Tàng Kiếm các", 1058: "Tử Trúc lâm", 1059: "Kiếm Chủng",
+      1070: "Đấu thuyền rồng", 1071: "Đấu thuyền rồng", 1072: "Đấu thuyền rồng", 1073: "Đấu thuyền rồng",
+      1074: "Đấu thuyền rồng", 1075: "Đấu thuyền rồng", 1076: "Đấu thuyền rồng", 1077: "Đấu thuyền rồng",
+      1100: "Cổ Dương Mật động", 1101: "Hoàng Lăng Mật đạo", 1102: "Hoàng Lăng mật thất",
+      1103: "Luyện đơn động", 1104: "Ngũ hành trận", 1105: "Cuối Sa mạc", 1106: "Quán trọ Long môn",
+      1200: "Cổ Dương Mật động", 1201: "Hoàng Lăng Mật đạo", 1202: "Hoàng Lăng mật thất",
+      1203: "Luyện đơn động", 1204: "Ngũ hành trận", 1205: "Cuối Sa mạc", 1206: "Quán trọ Long môn",
+      1300: "Cổ Dương Mật động", 1301: "Hoàng Lăng Mật đạo", 1302: "Hoàng Lăng mật thất",
+      1303: "Luyện đơn động", 1304: "Ngũ hành trận", 1305: "Cuối Sa mạc", 1306: "Quán trọ Long môn",
+      1400: "Cổ Dương Mật động", 1401: "Hoàng Lăng Mật đạo", 1402: "Hoàng Lăng mật thất",
+      1403: "Luyện đơn động", 1404: "Ngũ hành trận", 1405: "Cuối Sa mạc", 1406: "Quán trọ Long môn",
+      1500: "Cổ Dương Mật động", 1501: "Hoàng Lăng Mật đạo", 1502: "Hoàng Lăng mật thất",
+      1503: "Luyện đơn động", 1504: "Ngũ hành trận", 1505: "Cuối Sa mạc", 1506: "Quán trọ Long môn",
+      2010: "Thái Hư Huyễn Cảnh", 2011: "Sơn môn", 2012: "Đại viện", 2013: "Hậu hoa viên",
+      2014: "Liên Hoàn Sào", 2015: "Tàng Kiếm các", 2018: "Tử Trúc lâm", 2019: "Kiếm Chủng",
+      2021: "Sơn môn", 2022: "Đại viện", 2023: "Hậu hoa viên", 2024: "Liên Hoàn Sào",
+      2025: "Tàng Kiếm các", 2028: "Tử Trúc lâm", 2029: "Kiếm Chủng", 2031: "Sơn môn",
+      2032: "Đại viện", 2033: "Hậu hoa viên", 2034: "Liên Hoàn Sào", 2035: "Tàng Kiếm các",
+      2038: "Tử Trúc lâm", 2039: "Kiếm Chủng", 2041: "Sơn môn", 2042: "Đại viện",
+      2043: "Hậu hoa viên", 2044: "Liên Hoàn Sào", 2045: "Tàng Kiếm các", 2048: "Tử Trúc lâm",
+      2049: "Kiếm Chủng", 2051: "Sơn môn", 2052: "Đại viện", 2053: "Hậu hoa viên",
+      2054: "Liên Hoàn Sào", 2055: "Tàng Kiếm các", 2058: "Tử Trúc lâm", 2059: "Kiếm Chủng",
+      2070: "Đấu thuyền rồng", 2071: "Đấu thuyền rồng", 2072: "Đấu thuyền rồng", 2073: "Đấu thuyền rồng",
+      2074: "Đấu thuyền rồng", 2075: "Đấu thuyền rồng", 2076: "Đấu thuyền rồng", 2077: "Đấu thuyền rồng",
+	  3010: "Thái Hư Huyễn Cảnh", 3011: "Sơn môn", 3012: "Đại viện", 3013: "Hậu hoa viên",
+      3014: "Liên Hoàn Sào", 3015: "Tàng Kiếm các", 3018: "Tử Trúc lâm", 3019: "Kiếm Chủng",
+      3021: "Sơn môn", 3022: "Đại viện", 3023: "Hậu hoa viên", 3024: "Liên Hoàn Sào",
+      3025: "Tàng Kiếm các", 3028: "Tử Trúc lâm", 3029: "Kiếm Chủng", 3031: "Sơn môn",
+      3032: "Đại viện", 3033: "Hậu hoa viên", 3034: "Liên Hoàn Sào", 3035: "Tàng Kiếm các",
+      3038: "Tử Trúc lâm", 3039: "Kiếm Chủng", 3041: "Sơn môn", 3042: "Đại viện",
+      3043: "Hậu hoa viên", 3044: "Liên Hoàn Sào", 3045: "Tàng Kiếm các", 3048: "Tử Trúc lâm",
+      3049: "Kiếm Chủng", 3051: "Sơn môn", 3052: "Đại viện", 3053: "Hậu hoa viên",
+      3054: "Liên Hoàn Sào", 3055: "Tàng Kiếm các", 3058: "Tử Trúc lâm", 3059: "Kiếm Chủng",
+      3070: "Đấu thuyền rồng", 3071: "Đấu thuyền rồng", 3072: "Đấu thuyền rồng", 3073: "Đấu thuyền rồng",
+      3074: "Đấu thuyền rồng", 3075: "Đấu thuyền rồng", 3076: "Đấu thuyền rồng", 3077: "Đấu thuyền rồng",
+	  3101: "Mộc nhân hạng", 3102: "Huyền Vũ Phong", 3103: "Vô Tướng Gian", 3104: "Hào Tung Cốc",
+      3105: "Trúc Hải", 3106: "Trung Võ Hiệu Trường", 3107: "U Nan Quật",
+	  4010: "Thái Hư Huyễn Cảnh", 4011: "Sơn môn", 4012: "Đại viện", 4013: "Hậu hoa viên",
+      4014: "Liên Hoàn Sào", 4015: "Tàng Kiếm các", 4018: "Tử Trúc lâm", 4019: "Kiếm Chủng",
+      4021: "Sơn môn", 4022: "Đại viện", 4023: "Hậu hoa viên", 4024: "Liên Hoàn Sào",
+      4025: "Tàng Kiếm các", 4028: "Tử Trúc lâm", 4029: "Kiếm Chủng", 4031: "Sơn môn",
+      4032: "Đại viện", 4033: "Hậu hoa viên", 4034: "Liên Hoàn Sào", 4035: "Tàng Kiếm các",
+      4038: "Tử Trúc lâm", 4039: "Kiếm Chủng", 4041: "Sơn môn", 4042: "Đại viện",
+      4043: "Hậu hoa viên", 4044: "Liên Hoàn Sào", 4045: "Tàng Kiếm các", 4048: "Tử Trúc lâm",
+      4049: "Kiếm Chủng", 4051: "Sơn môn", 4052: "Đại viện", 4053: "Hậu hoa viên",
+      4054: "Liên Hoàn Sào", 4055: "Tàng Kiếm các", 4058: "Tử Trúc lâm", 4059: "Kiếm Chủng",
+	  5010: "Thái Hư Huyễn Cảnh", 5011: "Sơn môn", 5012: "Đại viện", 5013: "Hậu hoa viên",
+      5014: "Liên Hoàn Sào", 5015: "Tàng Kiếm các", 5018: "Tử Trúc lâm", 5019: "Kiếm Chủng",
+      5021: "Sơn môn", 5022: "Đại viện", 5023: "Hậu hoa viên", 5024: "Liên Hoàn Sào",
+      5025: "Tàng Kiếm các", 5028: "Tử Trúc lâm", 5029: "Kiếm Chủng", 5031: "Sơn môn",
+      5032: "Đại viện", 5033: "Hậu hoa viên", 5034: "Liên Hoàn Sào", 5035: "Tàng Kiếm các",
+      5038: "Tử Trúc lâm", 5039: "Kiếm Chủng", 5041: "Sơn môn", 5042: "Đại viện",
+      5043: "Hậu hoa viên", 5044: "Liên Hoàn Sào", 5045: "Tàng Kiếm các", 5048: "Tử Trúc lâm",
+      5049: "Kiếm Chủng", 5051: "Sơn môn", 5052: "Đại viện", 5053: "Hậu hoa viên",
+      5054: "Liên Hoàn Sào", 5055: "Tàng Kiếm các", 5058: "Tử Trúc lâm", 5059: "Kiếm Chủng",
+	  
+	  5060: "Chiến trường Thôn trang-Nhạn Môn Quan", 5061: "Chiến trường Thôn trang-Nhạn Môn Quan", 5062: "Chiến trường Thôn trang-Nhạn Môn Quan", 5063: "Chiến trường Thôn trang-Nhạn Môn Quan",
+      6001: "Bản đồ Tứ Linh", 6002: "Bản đồ Tứ Linh", 6003: "Bản đồ Tứ Linh", 6004: "Bản đồ Tứ Linh",
+      6005: "Bản đồ Tứ Linh", 6006: "Thiên Môn trận", 6007: "Lương Sơn", 6008: "Hổ Duyệt Hiệp",
+      6009: "Đào Hoa Tiểu Sạn", 6010: "Đào Hoa Tiểu Sạn", 6011: "Đào Hoa Tiểu Sạn", 6012: "Thiếu Lâm Nghị Sự Đường",
+      6013: "Mai Trang đại lao", 6014: "Tây Đảo", 6015: "Hắc Mộc Nhai", 6016: "Mai Trang",
+      6017: "Hắc Mộc Nhai", 6018: "Hắc Mộc Nhai", 6019: "Thông Thiên Huyễn Cảnh", 6020: "Vạn Kiếm Trũng",
+      6021: "Thiên Tầm Huyễn Cảnh tầng 1", 6022: "Thiên Tầm Huyễn Cảnh tầng 2", 6023: "Thiên Tầm Huyễn Cảnh tầng 3", 6024: "Thiết Chưởng Sơn Trang",
+      6025: "Thần điện", 6026: "Chân Ma Thiên Môn Trận", 6027: "Chiến trường liên đấu", 6028: "Võ Trường Liên Server",
+      6029: "Chiến trường Thôn trang-Nhạn Môn Quan", 6030: "Chiến trường Thảo cốc-Nhạn Môn Quan", 6031: "Chiến trường pháo đài-Nhạn Môn Quan", 6032: "Chiến trường chính-Nhạn Môn Quan",
+      6066: "Bích Hoang Thành", 6067: "Hoa Sơn Điện", 6068: "Hoàng Cung Giáo Trường", 6069: "Uy Vũ Đại Lôi",
+      6070: "Hạ Lưu Thanh Tuyền", 6071: "Tử Cấm Điện", 6072: "Thông Thiên Tác Đạo", 6073: "Trấn Yêu Thất",
+      6074: "Bản đồ chiến đấu bang hội", 6075: "Thái Nhất Tháp", 6076: "Ân Oán Đài", 7100: "Khu vực tỷ thí liên server",
+      7101: "Nơi báo danh Thiên Môn Trận", 7102: "Hoàng Thành dịch trạm", 7103: "Khu an toàn Vân Trung", 7104: "Khu an toàn Đại Lý",
+      7105: "Khu an toàn Thành Đô", 7106: "Khu an toàn Tuyền Châu", 7107: "Khu an toàn Phượng Tường", 7108: "Khu an toàn Biện Kinh",
+      7109: "Khu an toàn Dương Châu", 7110: "Khu an toàn Hạng Dương",
+	  
+	  8000: "Đấu Trường Chuẩn Bị", 8001: "Đấu Trường Phối Hợp", 8002: "Mô hình tồn tại 2v2", 8003: "Mô hình tồn tại 3v3",
+      8004: "Mô hình tồn tại 5v5", 8005: "Mô hình tổ đội 1v1", 8006: "Mô hình tổ đội 2v2", 8007: "Mô hình tổ đội 3v3",
+      8008: "Mô hình tổ đội 5v5", 8009: "Khu vực chuẩn bị liên server", 8010: "Xi Hỏa Giáo Ngục Giám"
+
+    };
+	
+
+    const mapSelect = document.getElementById("mapSelect");
+    for (const id in maps) {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.text = `${id}: ${maps[id]}`;
+      mapSelect.appendChild(opt);
+    }
+
+function convertToGame() {
+  const x = parseInt(document.getElementById("scriptX").value, 10);
+  const y = parseInt(document.getElementById("scriptY").value, 10);
+  const gx = Math.floor(x / 8);
+  const gy = Math.floor(y / 8 / 2);
+  const mapId = mapSelect.value;
+  const mapName = maps[mapId] || "Không rõ";
+
+  document.getElementById("gameResult").innerHTML =
+    `<strong>Tọa độ Game</strong><br>➤ X: ${gx}<br>➤ Y: ${gy}<br>➤ Bản đồ: ${mapName} (ID ${mapId})`;
+}
+
+function convertToScript() {
+  const x = parseInt(document.getElementById("gameX").value, 10);
+  const y = parseInt(document.getElementById("gameY").value, 10);
+  const sx = x * 8;
+  const sy = y * 8 * 2;
+
+  const result = `
+    Kết quả: Tọa độ Script<br>
+    ➤ X: ${sx}<br>
+    ➤ Y: ${sy}
+  `;
+  document.getElementById("scriptResult").innerHTML = result;
+}
+
+	
+function searchMap() {
+  const id = document.getElementById("searchMapId").value.trim();
+  const resultSpan = document.getElementById("mapSearchResult");
+  const mapSelect = document.getElementById("mapSelect");
+
+  if (!/^\d+$/.test(id)) {
+    resultSpan.innerHTML = `<strong>Lỗi:</strong> Vui lòng nhập ID bản đồ là số nguyên.`;
+    resultSpan.style.color = "darkred";
+    return;
+  }
+
+  const name = maps[id];
+  if (name) {
+    resultSpan.innerHTML = `<strong>Kết quả tìm kiếm:</strong><br>➤ ID: ${id}<br>➤ Tên bản đồ: ${name}`;
+    resultSpan.style.color = "darkred";
+
+    // Tự động chọn bản đồ nếu tìm thấy
+    mapSelect.value = id;
+  } else {
+    resultSpan.innerHTML = `❌ Không tìm thấy bản đồ với ID ${id}`;
+    resultSpan.style.color = "darkred";
+  }
+  }
+  </script>
+</body>
+</html>
+	
